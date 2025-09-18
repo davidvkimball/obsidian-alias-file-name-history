@@ -12,7 +12,7 @@ interface AliasFilenameHistorySettings {
 }
 
 const DEFAULT_SETTINGS: AliasFilenameHistorySettings = {
-  ignoreRegexes: ['^_', '^Untitled$'],
+  ignoreRegexes: ['^_', '^Untitled$', '^Untitled \\d+$'],
   timeoutSeconds: 5,
   caseSensitive: false,
   autoCreateFrontmatter: true,
@@ -220,7 +220,7 @@ class AliasFilenameHistorySettingTab extends PluginSettingTab {
       .setDesc('Comma-separated regex patterns for filenames or immediate parent folder names to ignore (e.g., ^_ for underscore prefixes, ^Untitled$ for Untitled). Leave empty to disable.')
       .addText((text) =>
         text
-          .setPlaceholder('^_,^Untitled$')
+          .setPlaceholder('^_,^Untitled$,^Untitled \\d+$')
           .setValue(this.plugin.settings.ignoreRegexes.join(','))
           .onChange(async (value) => {
             this.plugin.settings.ignoreRegexes = value.split(',').map((s) => s.trim()).filter((s) => s);
