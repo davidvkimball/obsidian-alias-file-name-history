@@ -34,6 +34,25 @@ export default class AliasFilenameHistoryPlugin extends Plugin {
     await this.saveData(this.settings);
   }
 
+  private isPathInFolder(path: string, folder: string): boolean {
+    // Handle vault root variable
+    if (folder.includes('{vault}') || folder.includes('{root}')) {
+      const resolvedFolder = folder.replace(/\{vault\}|\{root\}/g, '');
+      // If the folder is just the variable, it means include only vault root files
+      if (resolvedFolder === '' || resolvedFolder === '/') {
+        // Include only files directly in the vault root (no subfolders)
+        const isVaultRoot = !path.includes('/');
+        console.log(`Checking vault root for "${path}": ${isVaultRoot} (vault root only)`);
+        return isVaultRoot;
+      }
+      // Otherwise, replace the variable and check normally
+      return path.startsWith(resolvedFolder + '/') || path === resolvedFolder;
+    }
+    
+    // Normal folder matching
+    return path.startsWith(folder + '/') || path === folder;
+  }
+
   private async handleRename(newFile: TAbstractFile, oldPath: string) {
     if (!(newFile instanceof TFile)) return;
     if (!this.settings.fileExtensions.includes(newFile.extension)) return;
@@ -54,13 +73,17 @@ export default class AliasFilenameHistoryPlugin extends Plugin {
     }
 
     const path = newFile.path;
-    if (this.settings.includeFolders.length > 0 && !this.settings.includeFolders.some(f => path.startsWith(f + '/') || path === f)) {
-      console.log(`Skipping rename for "${path}": not in included folders`);
-      return;
-    }
-    if (this.settings.excludeFolders.some(f => path.startsWith(f + '/') || path === f)) {
-      console.log(`Skipping rename for "${path}": in excluded folders`);
-      return;
+    
+    // Only apply include/exclude folder checks to filename changes, not folder renames
+    if (isNameChange) {
+      if (this.settings.includeFolders.length > 0 && !this.settings.includeFolders.some(f => this.isPathInFolder(path, f))) {
+        console.log(`Skipping filename rename for "${path}": not in included folders`);
+        return;
+      }
+      if (this.settings.excludeFolders.some(f => this.isPathInFolder(path, f))) {
+        console.log(`Skipping filename rename for "${path}": in excluded folders`);
+        return;
+      }
     }
 
     // Check ignore regexes

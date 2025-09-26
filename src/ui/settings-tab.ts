@@ -89,7 +89,7 @@ export class AliasFilenameHistorySettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName('Include folders')
-      .setDesc('Comma-separated list of folder paths to include (empty for all).')
+      .setDesc('Comma-separated list of folder paths to include (empty for all). Use {vault} or {root} to include only files directly in the vault root (no subfolders).')
       .addText((text) =>
         text
           .setValue(this.plugin.settings.includeFolders.join(','))
@@ -101,7 +101,7 @@ export class AliasFilenameHistorySettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName('Exclude folders')
-      .setDesc('Comma-separated list of folder paths to exclude.')
+      .setDesc('Comma-separated list of folder paths to exclude. Use {vault} or {root} to exclude files directly in the vault root (no subfolders).')
       .addText((text) =>
         text
           .setValue(this.plugin.settings.excludeFolders.join(','))
