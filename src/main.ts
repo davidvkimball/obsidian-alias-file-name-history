@@ -6,7 +6,7 @@ import { getBasename, getImmediateParentName } from './utils/path-utils';
 
 export default class AliasFilenameHistoryPlugin extends Plugin {
   settings: AliasFilenameHistorySettings;
-  private debounceMap: Map<string, { queue: Set<string>; timeoutId: NodeJS.Timeout | null; currentPath: string }> = new Map();
+  private debounceMap: Map<string, { queue: Set<string>; timeoutId: number; currentPath: string }> = new Map();
   private aliasProcessor: AliasProcessor;
 
   async onload() {
@@ -19,8 +19,8 @@ export default class AliasFilenameHistoryPlugin extends Plugin {
   onunload() {
     // Clear any pending timeouts
     for (const entry of this.debounceMap.values()) {
-      if (entry.timeoutId !== null) {
-        clearTimeout(entry.timeoutId);
+      if (entry.timeoutId !== 0) {
+        window.clearTimeout(entry.timeoutId);
       }
     }
     this.debounceMap.clear();
@@ -74,14 +74,14 @@ export default class AliasFilenameHistoryPlugin extends Plugin {
 
     const path = newFile.path;
     
-    // Only apply include/exclude folder checks to filename changes, not folder renames
+    // Only apply include/exclude folder checks to file name changes, not folder renames
     if (isNameChange) {
       if (this.settings.includeFolders.length > 0 && !this.settings.includeFolders.some(f => this.isPathInFolder(path, f))) {
-        console.log(`Skipping filename rename for "${path}": not in included folders`);
+        console.log(`Skipping file name rename for "${path}": not in included folders`);
         return;
       }
       if (this.settings.excludeFolders.some(f => this.isPathInFolder(path, f))) {
-        console.log(`Skipping filename rename for "${path}": in excluded folders`);
+        console.log(`Skipping file name rename for "${path}": in excluded folders`);
         return;
       }
     }
@@ -99,11 +99,22 @@ export default class AliasFilenameHistoryPlugin extends Plugin {
     let toQueue: string | null = null;
     if (isNameChange) {
       if (regexes.some(re => re.test(oldBasename) || re.test(newBasename))) {
-        console.log(`Skipping filename rename from "${oldBasename}" to "${newBasename}" for file "${path}" due to matching ignore regex`);
+        console.log(`Skipping file name rename from "${oldBasename}" to "${newBasename}" for file "${path}" due to matching ignore regex`);
         return;
       }
       toQueue = oldBasename;
-    } else if (isFolderChange && this.settings.trackFolderRenames) {
+    } else if (isFolderChange && this.settings.trackFolderRenames && this.settings.trackFolderRenames.trim() !== '') {
+      // Check if the current file name matches the specified name (without extension)
+      const currentBasename = newFile.basename;
+      const matchesFilename = this.settings.caseSensitive 
+        ? currentBasename === this.settings.trackFolderRenames
+        : currentBasename.toLowerCase() === this.settings.trackFolderRenames.toLowerCase();
+      
+      if (!matchesFilename) {
+        console.log(`Skipping folder rename for "${path}": file name "${currentBasename}" does not match tracked file name "${this.settings.trackFolderRenames}"`);
+        return;
+      }
+      
       if (oldImmediateParentName === '' || newImmediateParentName === '') {
         console.log(`Skipping folder rename for "${path}": root-level file`);
         return;
@@ -117,23 +128,37 @@ export default class AliasFilenameHistoryPlugin extends Plugin {
 
     if (!toQueue) return;
 
-    let entry: { queue: Set<string>; timeoutId: NodeJS.Timeout | null; currentPath: string };
-    const existingEntry = this.debounceMap.get(oldPath);
+    // Check if there's already a pending timeout for this file
+    // We need to check both the new path and the old path since the file was just renamed
+    let existingEntry = this.debounceMap.get(newFile.path);
+    if (!existingEntry) {
+      // Check if there's a timeout for the old path (the file was just renamed from there)
+      existingEntry = this.debounceMap.get(oldPath);
+      if (existingEntry) {
+        // Remove the old entry since we're updating it with the new path
+        this.debounceMap.delete(oldPath);
+      }
+    }
+    
     if (existingEntry) {
-      entry = existingEntry;
-      this.debounceMap.delete(oldPath);
-      entry.currentPath = newFile.path;
-    } else {
-      entry = { queue: new Set<string>(), timeoutId: null, currentPath: newFile.path };
+      // File was renamed again before timeout expired - cancel the previous timeout
+      if (existingEntry.timeoutId !== 0) {
+        window.clearTimeout(existingEntry.timeoutId);
+      }
+      
+      // Use the original stable name from the previous timeout, not the temporary name
+      toQueue = Array.from(existingEntry.queue)[0]; // Use the original stable name
     }
 
-    entry.queue.add(toQueue);
+    // Create entry to track the timeout
+    const entry = { 
+      queue: new Set<string>([toQueue]), 
+      timeoutId: 0, 
+      currentPath: newFile.path 
+    };
 
-    if (entry.timeoutId !== null) {
-      clearTimeout(entry.timeoutId);
-    }
-
-    entry.timeoutId = setTimeout(() => {
+    // Set timeout to actually store the alias after the debounce period
+    entry.timeoutId = window.setTimeout(() => {
       this.aliasProcessor.processAliases(entry.currentPath, entry.queue);
       this.debounceMap.delete(entry.currentPath);
     }, this.settings.timeoutSeconds * 1000);

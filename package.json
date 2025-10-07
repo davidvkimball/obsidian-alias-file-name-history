@@ -1,7 +1,7 @@
 {
-	"name": "alias-filename-history",
-	"version": "0.1.3",
-	"description": "Store filename history into the aliases property of your notes.",
+	"name": "alias-file-name-history",
+	"version": "0.1.4",
+	"description": "Store file name history into the aliases property of your notes.",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",

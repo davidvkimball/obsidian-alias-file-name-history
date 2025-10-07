@@ -20,7 +20,7 @@ export class AliasFilenameHistorySettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName('Ignore regex patterns')
-      .setDesc('Comma-separated regex patterns for filenames or immediate parent folder names to ignore (e.g., ^_ for underscore prefixes, ^Untitled$ for Untitled). Leave empty to disable.')
+      .setDesc('Comma-separated regex patterns for file names or immediate parent folder names to ignore (e.g., ^_ for underscore prefixes, ^Untitled$ for Untitled). Leave empty to disable.')
       .addText((text) =>
         text
           .setPlaceholder('^_,^Untitled$,^Untitled \\d+$')
@@ -66,13 +66,16 @@ export class AliasFilenameHistorySettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName('Track folder renames')
-      .setDesc('If enabled, store old immediate parent folder names as aliases when parent folders are renamed.')
-      .addToggle((toggle) =>
-        toggle.setValue(this.plugin.settings.trackFolderRenames).onChange(async (value) => {
-          this.plugin.settings.trackFolderRenames = value;
-          await this.plugin.saveSettings();
-        })
+      .setName('Track folder renames for specific file name')
+      .setDesc('If a markdown file matches this file name, store old immediate parent folder names as aliases when parent folders are renamed.')
+      .addText((text) =>
+        text
+          .setPlaceholder('index')
+          .setValue(this.plugin.settings.trackFolderRenames)
+          .onChange(async (value) => {
+            this.plugin.settings.trackFolderRenames = value;
+            await this.plugin.saveSettings();
+          })
       );
 
     new Setting(containerEl)

@@ -1,9 +1,9 @@
 {
-	"id": "alias-filename-history",
-	"name": "Alias Filename History",
-	"version": "0.1.3",
+	"id": "alias-file-name-history",
+	"name": "Alias File Name History",
+	"version": "0.1.4",
 	"minAppVersion": "0.15.0",
-	"description": "Store filename history into the aliases property of your notes.",
+	"description": "Store file name history into the aliases property of your notes.",
 	"author": "David V. Kimball",
 	"authorUrl": "https://davidvkimball.com",
 	"fundingUrl": "https://patreon.com/davidvkimball",
