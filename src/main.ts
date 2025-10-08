@@ -42,7 +42,6 @@ export default class AliasFilenameHistoryPlugin extends Plugin {
       if (resolvedFolder === '' || resolvedFolder === '/') {
         // Include only files directly in the vault root (no subfolders)
         const isVaultRoot = !path.includes('/');
-        console.log(`Checking vault root for "${path}": ${isVaultRoot} (vault root only)`);
         return isVaultRoot;
       }
       // Otherwise, replace the variable and check normally
@@ -68,7 +67,6 @@ export default class AliasFilenameHistoryPlugin extends Plugin {
     const isFolderChange = oldImmediateParentName !== newImmediateParentName && !isNameChange;
 
     if (!isNameChange && !isFolderChange) {
-      console.log(`Skipping rename for "${oldPath}" to "${newFile.path}": no significant change`);
       return;
     }
 
@@ -77,11 +75,9 @@ export default class AliasFilenameHistoryPlugin extends Plugin {
     // Only apply include/exclude folder checks to file name changes, not folder renames
     if (isNameChange) {
       if (this.settings.includeFolders.length > 0 && !this.settings.includeFolders.some(f => this.isPathInFolder(path, f))) {
-        console.log(`Skipping file name rename for "${path}": not in included folders`);
         return;
       }
       if (this.settings.excludeFolders.some(f => this.isPathInFolder(path, f))) {
-        console.log(`Skipping file name rename for "${path}": in excluded folders`);
         return;
       }
     }
@@ -99,7 +95,6 @@ export default class AliasFilenameHistoryPlugin extends Plugin {
     let toQueue: string | null = null;
     if (isNameChange) {
       if (regexes.some(re => re.test(oldBasename) || re.test(newBasename))) {
-        console.log(`Skipping file name rename from "${oldBasename}" to "${newBasename}" for file "${path}" due to matching ignore regex`);
         return;
       }
       toQueue = oldBasename;
@@ -111,16 +106,13 @@ export default class AliasFilenameHistoryPlugin extends Plugin {
         : currentBasename.toLowerCase() === this.settings.trackFolderRenames.toLowerCase();
       
       if (!matchesFilename) {
-        console.log(`Skipping folder rename for "${path}": file name "${currentBasename}" does not match tracked file name "${this.settings.trackFolderRenames}"`);
         return;
       }
       
       if (oldImmediateParentName === '' || newImmediateParentName === '') {
-        console.log(`Skipping folder rename for "${path}": root-level file`);
         return;
       }
       if (regexes.some(re => re.test(oldImmediateParentName) || re.test(newImmediateParentName))) {
-        console.log(`Skipping folder rename from "${oldImmediateParentName}" to "${newImmediateParentName}" for file "${path}" due to matching ignore regex`);
         return;
       }
       toQueue = oldImmediateParentName;

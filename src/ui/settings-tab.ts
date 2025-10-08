@@ -113,5 +113,6 @@ export class AliasFilenameHistorySettingTab extends PluginSettingTab {
             await this.plugin.saveSettings();
           })
       );
+
   }
 }

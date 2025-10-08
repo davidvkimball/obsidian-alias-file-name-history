@@ -26,7 +26,6 @@ export class AliasProcessor {
 
     for (const name of queue) {
       if (regexes.some(re => re.test(name))) {
-        console.log(`Skipping alias "${name}" for file "${path}" due to matching ignore regex`);
         continue;
       }
       const nameLower = name.toLowerCase();
@@ -34,7 +33,6 @@ export class AliasProcessor {
         (this.settings.caseSensitive && name === currentBasename) ||
         (!this.settings.caseSensitive && nameLower === currentBasenameLower)
       ) {
-        console.log(`Skipping alias "${name}" for file "${path}": matches current basename`);
         continue;
       }
       toAdd.push(name);
@@ -45,7 +43,10 @@ export class AliasProcessor {
     await this.app.fileManager.processFrontMatter(file, (fm) => {
       let aliases = fm.aliases;
       if (!Array.isArray(aliases)) {
-        if (!this.settings.autoCreateFrontmatter) return;
+        // If there's no frontmatter at all, we need to create it to add aliases
+        // If there's frontmatter but no aliases property, respect the autoCreateFrontmatter setting
+        const hasFrontmatter = Object.keys(fm).length > 0;
+        if (hasFrontmatter && !this.settings.autoCreateFrontmatter) return;
         aliases = [];
         fm.aliases = aliases;
       }
@@ -59,7 +60,6 @@ export class AliasProcessor {
         if (!existing.has(checkName)) {
           aliases.push(name);
           existing.add(checkName);
-          console.log(`Added alias "${name}" for file "${path}"`);
         }
       }
     });
