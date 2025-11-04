@@ -52,7 +52,7 @@ export default class AliasFilenameHistoryPlugin extends Plugin {
     return path.startsWith(folder + '/') || path === folder;
   }
 
-  private async handleRename(newFile: TAbstractFile, oldPath: string) {
+  private handleRename(newFile: TAbstractFile, oldPath: string) {
     if (!(newFile instanceof TFile)) return;
     if (!this.settings.fileExtensions.includes(newFile.extension)) return;
 
@@ -150,8 +150,12 @@ export default class AliasFilenameHistoryPlugin extends Plugin {
     };
 
     // Set timeout to actually store the alias after the debounce period
-    entry.timeoutId = window.setTimeout(() => {
-      this.aliasProcessor.processAliases(entry.currentPath, entry.queue);
+    entry.timeoutId = window.setTimeout(async () => {
+      try {
+        await this.aliasProcessor.processAliases(entry.currentPath, entry.queue);
+      } catch (error) {
+        console.error('Error processing aliases:', error);
+      }
       this.debounceMap.delete(entry.currentPath);
     }, this.settings.timeoutSeconds * 1000);
 

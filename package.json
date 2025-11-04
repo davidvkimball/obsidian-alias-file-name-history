@@ -1,6 +1,6 @@
 {
 	"name": "alias-file-name-history",
-	"version": "0.1.5",
+	"version": "0.1.6",
 	"description": "Store file name history into the aliases property of your notes.",
 	"main": "main.js",
 	"scripts": {
