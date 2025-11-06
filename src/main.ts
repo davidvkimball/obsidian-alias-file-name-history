@@ -150,13 +150,15 @@ export default class AliasFilenameHistoryPlugin extends Plugin {
     };
 
     // Set timeout to actually store the alias after the debounce period
-    entry.timeoutId = window.setTimeout(async () => {
-      try {
-        await this.aliasProcessor.processAliases(entry.currentPath, entry.queue);
-      } catch (error) {
-        console.error('Error processing aliases:', error);
-      }
-      this.debounceMap.delete(entry.currentPath);
+    entry.timeoutId = window.setTimeout(() => {
+      void (async () => {
+        try {
+          await this.aliasProcessor.processAliases(entry.currentPath, entry.queue);
+        } catch (error) {
+          console.error('Error processing aliases:', error);
+        }
+        this.debounceMap.delete(entry.currentPath);
+      })();
     }, this.settings.timeoutSeconds * 1000);
 
     this.debounceMap.set(newFile.path, entry);
